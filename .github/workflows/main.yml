@@ -27,11 +27,10 @@ jobs:
       - name: Install Android Component
         run: |
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-          # Buildozerが混乱しないように要求される場所にカチッとリンクさせます
           mkdir -p $HOME/.buildozer/android/platform
           ln -s $ANDROID_HOME $HOME/.buildozer/android/platform/android-sdk
 
-      # 必要最小限のLinuxツールのみを追加してメモリを節約します
+      # 必要最小限のLinuxツールのみを追加してメモリを強力に節約します
       - name: Install Build Dependencies
         run: |
           sudo apt update
@@ -43,7 +42,7 @@ jobs:
           pip install Cython virtualenv sh
           pip install buildozer
 
-      # メモリを一切無駄遣いさせない省エネコマンドでビルドを実行します
+      # サーバーが気絶（メモリ不足）しないよう、並列数を1に制限してビルドを実行します
       - name: Execute Buildozer Build
         run: |
           export PIP_BREAK_SYSTEM_PACKAGES=1
