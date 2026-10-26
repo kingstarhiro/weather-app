@@ -14,27 +14,28 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Android Build Dependencies
+      # JavaとAndroid SDKを最も省メモリで展開する公式の推奨ルートを設定します
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Component
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          # Buildozerが混乱しないように要求される場所にカチッとリンクさせます
+          mkdir -p $HOME/.buildozer/android/platform
+          ln -s $ANDROID_HOME $HOME/.buildozer/android/platform/android-sdk
+
+      # 必要最小限のLinuxツールのみを追加してメモリを節約します
+      - name: Install Build Dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libsqlite3-dev libffi-dev autoconf automake libtool pkg-config cmake libncurses6 libncurses-dev libtinfo6 libssl-dev
-
-      # 【新対策】 不足していた Android SDK、Build-Tools (Aidl含む) を直接Linuxマシン内に事前構築します
-      - name: Setup Android SDK and Build-Tools
-        run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
-          wget https://google.com
-          unzip commandlinetools-linux-11076708_latest.zip
-          mv cmdline-tools latest
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          # ライセンスの自動承認と、必要な部品（API 34用のbuild-tools等）の直接インストール
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-          # Buildozerが認識できるように、要求された場所にフォルダをリンク（共有）させます
-          mkdir -p $HOME/.buildozer/android/platform
-          ln -s $HOME/android-sdk $HOME/.buildozer/android/platform/android-sdk
+          sudo apt install -y git zip unzip ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libsqlite3-dev libffi-dev autoconf automake libtool pkg-config cmake libncurses6 libncurses-dev libtinfo6 libssl-dev
 
       - name: Install Buildozer directly
         run: |
@@ -42,12 +43,11 @@ jobs:
           pip install Cython virtualenv sh
           pip install buildozer
 
+      # メモリを一切無駄遣いさせない省エネコマンドでビルドを実行します
       - name: Execute Buildozer Build
         run: |
           export PIP_BREAK_SYSTEM_PACKAGES=1
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          buildozer -v android debug　p4a.extra_args="--workers=1"
+          buildozer -v android debug p4a.extra_args="--workers=1"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
