@@ -47,7 +47,7 @@ jobs:
           export PIP_BREAK_SYSTEM_PACKAGES=1
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          buildozer -v android debug
+          buildozer -v android debug　p4a.extra_args="--workers=1"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
