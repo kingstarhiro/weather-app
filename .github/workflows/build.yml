@@ -4,7 +4,6 @@ on:
 
 jobs:
   build:
-    # 2026年10月の移行エラーを回避するため、バージョンを確実に固定します
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -15,18 +14,24 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Buildozer dependencies
+      - name: Install Android Build Dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libsqlite3-dev libffi-dev autoconf automake libtool pkg-config cmake libncurses6 libncurses-dev libtinfo6
+          sudo apt install -y git zip unzip openjdk-17-jdk ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libsqlite3-dev libffi-dev autoconf automake libtool pkg-config cmake libncurses6 libncurses-dev libtinfo6 libssl-dev
 
-      # 【最重要】100%正常に動いている最新の組み立てロボットに変更しました
-      - name: Build with Buildozer
-        uses: ArtemGovorov/buildozer-action@v1
-        with:
-          command: buildozer -v android debug
+      - name: Install Buildozer directly
+        run: |
+          pip install --upgrade pip
+          pip install Cython virtualenv sh
+          pip install buildozer
 
-      - name: Upload APK
+      # 他人のアクションを使わず、自分の手で直接Buildozerを起動させます
+      - name: Execute Buildozer Build
+        run: |
+          export PIP_BREAK_SYSTEM_PACKAGES=1
+          buildozer -v android debug
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
